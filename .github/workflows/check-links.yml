@@ -1,0 +1,145 @@
+name: Check Links
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  LYCHEE_ARGS: >-
+    -vv
+    --no-progress
+    --exclude-loopback
+    --require-https
+    --include-fragments
+    --cache
+    --max-cache-age 1d
+    --cache-exclude-status '429,500..=599'
+    --accept '100..=103,200..=299,302,303,307,403,415,429'
+
+jobs:
+  check-repo-links:
+    name: Check Repository Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Restore lychee cache
+        id: lychee-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .lycheecache
+          key: lychee-repo-${{ github.run_id }}
+          restore-keys: lychee-repo-
+
+      - name: Check Repository Links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: ${{ env.LYCHEE_ARGS }} '**/*.md'
+          failIfEmpty: 'false'
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Save lychee cache
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .lycheecache
+          key: ${{ steps.lychee-cache.outputs.cache-primary-key }}
+
+  check-website-links:
+    name: Check Website Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout lychee config
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .lycheeignore
+            lychee.toml
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve homepage URL
+        id: homepage
+        env:
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          homepage="$(gh api "repos/$GITHUB_REPOSITORY" --jq '.homepage // ""')"
+          normalized="$(printf '%s' "${homepage,,}" | sed -E 's#^https?://(www\.)?##; s#/+$##')"
+          self="${GITHUB_REPOSITORY,,}"
+          if [[ -z $homepage ]]; then
+            echo "No homepage set, skipping website link check"
+          elif [[ $normalized == "github.com/$self" || $normalized == "github.com/$self"[/#?]* ]]; then
+            echo "Homepage points back at this repo, skipping website link check"
+          else
+            echo "Found homepage URL: $homepage"
+            echo "url=$homepage" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Restore lychee cache
+        if: steps.homepage.outputs.url != ''
+        id: lychee-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .lycheecache
+          key: lychee-site-${{ github.run_id }}
+          restore-keys: lychee-site-
+
+      - name: Install htmlq
+        if: steps.homepage.outputs.url != ''
+        run: cargo install htmlq --version 0.4.0 --locked
+
+      - name: Discover sitemap and generate URL list
+        if: steps.homepage.outputs.url != ''
+        env:
+          HOMEPAGE: ${{ steps.homepage.outputs.url }}
+        run: |
+          sitemap_url="$({
+            curl --fail --silent --show-error --location "$HOMEPAGE" |
+              htmlq --base "$HOMEPAGE" --attribute href 'link[rel~="sitemap"]'
+          } 2> "$RUNNER_TEMP/htmlq.log")" || true
+          sitemap_url="${sitemap_url:-$HOMEPAGE}"
+
+          pipx run --spec 'trafilatura==2.1.0' trafilatura --sitemap "$sitemap_url" --list \
+            > "$RUNNER_TEMP/urls.txt" 2> "$RUNNER_TEMP/trafilatura.log" || true
+
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/urls.txt"; then
+            echo "::group::No sitemap found, falling back to homepage URL"
+            cat "$RUNNER_TEMP/htmlq.log"
+            cat "$RUNNER_TEMP/trafilatura.log"
+            echo "::endgroup::"
+            printf '%s\n' "$HOMEPAGE" > "$RUNNER_TEMP/urls.txt"
+          fi
+          echo "::group::URLs ($(wc -l < "$RUNNER_TEMP/urls.txt"))"
+          cat "$RUNNER_TEMP/urls.txt"
+          echo "::endgroup::"
+
+      - name: Check Website Links
+        if: steps.homepage.outputs.url != ''
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: ${{ env.LYCHEE_ARGS }} --files-from ${{ runner.temp }}/urls.txt
+          failIfEmpty: 'false'
+          token: ${{ secrets.PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Save lychee cache
+        if: ${{ !cancelled() && steps.homepage.outputs.url != '' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .lycheecache
+          key: ${{ steps.lychee-cache.outputs.cache-primary-key }}

@@ -10,7 +10,7 @@ Instructions for the hardware-end of this hack are available here:
 
 [https://frontiernerds.com/brain-hack](https://frontiernerds.com/brain-hack)
 
-This library pairs nicely with the Processing-based [BrainGrapher](https://github.com/kitschpatrol/BrainGrapher).
+This library pairs nicely with the Processing-based [Brain Grapher](https://github.com/kitschpatrol/brain-grapher).
 
 The `getCSV()` function returns a string (`char*`) listing the most recent brain data, in the following format:
 
@@ -126,7 +126,7 @@ Download the [latest release](https://github.com/kitschpatrol/Brain/releases), d
 
 Note that the connection to the Neurosky headset is half-duplex — it will use up the RX pin on your Arduino, but you will still be able to send data back to a PC via USB. (Although in this case you won't be able to send data to the Arduino from the PC.)
 
-You may wish to read brain data over a software serial connection instead of the Arduino's hardware serial (this frees up the hardware serial for full-duplex operation). There's a different branch of this library designed for use with NewSoftSerial: [https://github.com/kitschpatrol/Arduino-Brain-Library/tree/softserial](https://github.com/kitschpatrol/Arduino-Brain-Library/tree/softserial)
+You may wish to read brain data over a software serial connection instead of the Arduino's hardware serial (this frees up the hardware serial for full-duplex operation). There's a different branch of this library designed for use with NewSoftSerial: [https://github.com/kitschpatrol/brain/tree/softserial](https://github.com/kitschpatrol/brain/tree/softserial)
 
 The MindFlex provides access to more brain data than the Force Trainer — in addition to the signal strength, attention and meditation values, the MindFlex gives access to 8 bands of EEG power data.
 
@@ -151,7 +151,7 @@ Thanks also to [Eero af Heurlin](https://github.com/rambo) for making some consi
 
 ## License
 
-Copyright Eric Mika, 2010–2023
+Copyright Eric Mika, 2010–2026
 Licensed under the GNU Lesser General Public License.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.

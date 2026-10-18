@@ -1,0 +1,41 @@
+{
+  "@context": "https://w3id.org/codemeta/3.1",
+  "@type": "SoftwareSourceCode",
+  "author": {
+    "@type": "Person",
+    "email": "eric@ericmika.com",
+    "name": "Eric Mika",
+    "url": "https://ericmika.com"
+  },
+  "codeRepository": "https://github.com/kitschpatrol/brain",
+  "description": "Arduino library for reading NeuroSky EEG brainwave data. Parses serial data from the Mattel MindFlex and Star Wars Force Trainer. Provides signal quality, attention, meditation, and EEG power values through individual accessors or CSV output. Supports hardware and software serial connections.",
+  "issueTracker": "https://github.com/kitschpatrol/brain/issues",
+  "keywords": ["arduino", "eeg", "brain", "neurosky", "mindflex", "force-trainer"],
+  "license": "https://spdx.org/licenses/LGPL-3.0-or-later",
+  "maintainer": {
+    "@type": "Person",
+    "email": "eric@ericmika.com",
+    "name": "Eric Mika",
+    "url": "https://ericmika.com"
+  },
+  "name": "Brain",
+  "programmingLanguage": ["C++"],
+  "readme": "https://github.com/kitschpatrol/brain/blob/HEAD/readme.md",
+  "runtimePlatform": "Arduino",
+  "softwareRequirements": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Arduino",
+      "url": "https://www.arduino.cc"
+    }
+  ],
+  "softwareSuggestions": [
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Brain Grapher",
+      "url": "https://github.com/kitschpatrol/brain-grapher"
+    }
+  ],
+  "url": "https://frontiernerds.com/brain-hack",
+  "version": "1.0.0"
+}
