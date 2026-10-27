@@ -19,6 +19,6 @@ jobs:
           persist-credentials: false
 
       - name: Sync Package info to GitHub
-        uses: kitschpatrol/github-action-repo-sync@de990a40a3cb5c44b2db5d744f425cd496788bff # v5.0.6
+        uses: kitschpatrol/github-action-repo-sync@5e05dd60f1f303764fee57b0d51ce5021b06e8d7 # v5.0.7
         with:
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
